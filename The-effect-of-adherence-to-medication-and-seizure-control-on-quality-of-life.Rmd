@@ -1,0 +1,118 @@
+---
+title: "The effect of medication adherenec and seizure control on quality of life"
+subtitle: "Mutiple regression model"
+author: "Joshua Edefo"
+date: "2024-01-11"
+email: "edefojoshua2000@yahoo.com"
+output: github_document
+---
+Libraries
+```{r a, message=FALSE}
+library(ggplot2)
+library(readr)
+library(tidyverse)
+library(foreign)
+
+```
+import data,
+
+```{r b}
+ep <- read.csv("C:/Users/joe62/OneDrive - Aberystwyth University/Apps/Desktop/R code/ep.csv")
+head(ep)
+str(ep)
+summary(ep)
+
+```
+
+Regression modelling
+
+```{r c}
+# cheak for multicolinearity , and correlation of indepedent variables with dependent variable
+cor(ep, method="pearson")
+
+#n no multicolineraity
+# correlaion between qol and n_med, and qol and adh not strong 
+
+ep_2va= lm(qol~ n_epil, data = ep)
+summary(ep_2va)
+# result accepted as R-squared:  0.2801,	Adjusted R-squared:  0.2749,  p-value: 1.511e-11 
+
+# assumming you want to use the independent variables in respective of their correlation with dependent variable
+# independent variables, n_med, n_epil are correlated while n_epil and adh are also corellated, 
+# so you can only choose one variable from all these in order to eliminate multicolinearity
+
+ep_2va_ad= lm(qol~ adh, data = ep)
+summary(ep_2va_ad)
+# not accepted as Multiple R-squared:  0.2214 (not upto 0.25),	Adjusted R-squared:  0.2158, even though p-value: 3.909e-09
+# this is because correlation between qol and adh is less than 0.5
+
+# using n_med as independent variable
+ep_2va_med= lm(qol~ n_med, data = ep)
+summary(ep_2va_med)
+# not accepted as R-squared:  0.01621,	Adjusted R-squared:  0.009131,  p-value: 0.1325 not significant
+
+
+# conducting multiple regerssionusing all variables
+ep_reg_all<- lm(qol~ n_epil+ adh + n_med,  data = ep)
+summary(ep_reg_all)
+# results R-squared:  0.4276,	Adjusted R-squared:  0.4151, p-value: < 2.2e-16
+
+# conducting mutiple regression without n_med since it is the least correlated
+ep_reg_a<- lm(qol~ n_epil+ adh,  data = ep)
+summary(ep_reg_a)
+# accepted result R-squared:  0.4218,	Adjusted R-squared:  0.4134, p-value: < 2.2e-16
+# not for large no of independent variables use Adjusted R-squared in order to resolve over fitting
+```
+
+Best regression model
+
+```{r d}
+ep_reg_a<- lm(qol~ n_epil+ adh,  data = ep)
+summary(ep_reg_a)
+anova(ep_reg_a)
+
+# qol = 2.92786 + 0.2245n_epil - 01356adh + u
+# R-squared:  0.4276 means that 42.8% variation of qol can be explained by n_epil and adh while 
+# the remaining 57.2 are explained by other variable hence the  disturbance term (u)
+
+confint(ep_reg_a, level = 0.95)
+# results 
+
+# when adh is constant
+#qol = 2.92786 (SD= 0.1609) + 0.2245(SD=0.0321)n_epil 
+
+# when adh is constant at 95% CI
+#qol = (2.6060019 to 3.24970973) + (0.1602976 to 0.28868982)n_epil 
+
+# when n_eph is constant
+#qol = 2.92786 (SD= 0.1609) - 0.13556(SD=0.0230)n_epil 
+
+# when adh is constant at 95% CI
+#qol = (2.6060019 to 3.24970973) + (-0.1816611 -0.08946554)n_epil 
+```
+
+Residuals
+```{r e}
+
+standard.res <- rstandard(ep_reg_a)
+standard.res
+
+# column bind standardised residuals back to original data
+final.data <- cbind(ep,standard.res)
+final.data
+# visualise the qol standardized residuals
+plot(final.data$qol, standard.res, ylab = " Qol Standardized Residuals", xlab = "X", abline (0,0))
+
+# visualise the adh standardized residuals
+plot(final.data$qol, standard.res, ylab = " Adh Standardized Residuals", xlab = "X", abline (0,0))
+
+# sort standardised residuals
+
+final.data[order(final.data$standard.res),]
+# no outlier as the highest value is2.77609888
+# standardised residual absolute value of 3 and above means that it is outlier
+```
+session information
+```{r f, message=FALSE}
+sessionInfo()
+```
